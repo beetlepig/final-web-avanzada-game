@@ -1,5 +1,13 @@
 .CanvasContainer {
-    margin: 0 auto;
+    margin: 0;
     width: 133vh;
     height: 100%;
+    overflow: auto;
+}
+
+@media (orientation: portrait) {
+    .CanvasContainer {
+        width: 100%;
+        height: 67vw;
+    }
 }

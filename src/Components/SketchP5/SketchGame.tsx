@@ -2,19 +2,21 @@ import React, {Component} from 'react';
 import './SketchGame.css';
 import { Sketch } from './P5Wrapper/sketch';
 import {sketch} from "./sketch.p5";
+import {observer} from "mobx-react";
+import {store} from "../../store/P5Store";
 
 interface Props {
 
 }
 
 interface State {
-    value: number;
+
 }
 
-class SketchGame extends Component<Props, State> {
+@observer class SketchGame extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
-        this.state = { value: 0 };
+        this.state = {};
     }
 
     componentDidMount() {
@@ -27,11 +29,11 @@ class SketchGame extends Component<Props, State> {
 
     render() {
         return (
-            <div className={'CanvasContainer'} onClick={() => { this.setState({ value: (this.state.value + 5)%256 }) }}>
+            <div className={'CanvasContainer'}>
                 <Sketch sketch={sketch}
                         width={'100%'}
                         height={'100%'}
-                        sketchProps={{ value: this.state.value}}
+                        sketchProps={{ puntos: store.puntos, playerPosition: store.lastPlayerPosition}}
                 />
             </div>
         );

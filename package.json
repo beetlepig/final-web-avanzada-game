@@ -4,6 +4,8 @@
   "private": true,
   "dependencies": {
     "mobile-detect": "^1.4.3",
+    "mobx": "^5.6.0",
+    "mobx-react": "^5.4.2",
     "p5": "^0.7.2",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
