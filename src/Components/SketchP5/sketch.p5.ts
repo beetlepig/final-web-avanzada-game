@@ -23,7 +23,9 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 
         p.draw = () => {
             p.background(200, p.frameCount % 60);
+            playerSpaceShip.moveSpaceship();
             playerSpaceShip.update();
+            playerSpaceShip.display();
         };
 
         p.receiveProps = (nextProps: SketchProps) => {
@@ -50,7 +52,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 class CharacterSpaceship {
     private pos: Vector;
     private vel: Vector;
-    private aceleration: Vector;
+    private acceleration: Vector;
     private p5Instance: p5;
     private readonly sketchWidth: number;
     private readonly sketchHeight: number;
@@ -61,31 +63,48 @@ class CharacterSpaceship {
         this.sketchWidth = _sketchWidth;
         this.sketchHeight = _sketchHeight;
         this.vel = this.p5Instance.createVector(0, 0);
-        this.aceleration = this.p5Instance.createVector(0 , 0);
-        this.mass = 1;
+        this.acceleration = this.p5Instance.createVector(0 , 0);
+        this.mass = 4;
         lastPlayerPosition? this.pos = lastPlayerPosition : this.pos = this.p5Instance.createVector(this.sketchWidth * 0.5, this.sketchHeight * 0.8);
     }
 
     update() {
-        this.moveSpaceship();
+        this.vel.add(this.acceleration);
+        this.pos.add(this.vel);
+        this.acceleration.mult(0);
+    }
+
+    display() {
         this.p5Instance.noStroke();
-        this.p5Instance.ellipse(this.pos.x, this.pos.y, 40, 40);
+        this.p5Instance.ellipse(this.pos.x, this.pos.y, this.mass * 10, this.mass * 10);
     }
 
     moveSpaceship() {
-        this.pos.add(this.vel);
+        const c = 0.25;
+        const friction: Vector = this.vel.copy();
+        friction.mult(-1);
+        friction.normalize();
+        friction.mult(c);
+
+        this.applyForce(friction);
+
+
         if(this.p5Instance.keyIsPressed) {
             if (this.p5Instance.key === 'a') {
                 console.log('teclaIzquierda');
-                this.vel.x = -1
+                this.applyForce(this.p5Instance.createVector(-1));
             } else if (this.p5Instance.key === 'd') {
                 console.log('teclaDerecha');
-                this.vel.x = 1;
+                this.applyForce(this.p5Instance.createVector(+1));
             }
-        } else {
-            this.vel.set(0);
         }
        // this.pos.set(this.pos.x, this.sketchHeight * 0.8);
+        this.vel.limit(7);
+    }
+
+    applyForce(force: Vector) {
+        const f: Vector = Vector.div(force , this.mass);
+        this.acceleration.add(f);
     }
 
     unmount() {
