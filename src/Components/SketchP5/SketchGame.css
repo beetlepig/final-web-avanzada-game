@@ -1,13 +1,31 @@
-.CanvasContainer {
-    margin: 0;
-    width: 133vh;
-    height: 100%;
-    overflow: auto;
+@media (orientation: landscape) {
+    .CanvasContainer {
+        margin: 0;
+        padding: 0;
+        width: 133vh;
+        height: 99%;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: solid rgba(255, 255, 255, 1) 0.1vh;
+        box-sizing: border-box;
+    }
 }
+
+
 
 @media (orientation: portrait) {
     .CanvasContainer {
-        width: 100%;
+        margin: 0;
+        padding: 0;
+        width: 99%;
         height: 67vw;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: solid rgba(255, 255, 255, 1) 0.1vh;
+        box-sizing: border-box;
     }
 }

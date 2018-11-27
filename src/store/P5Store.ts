@@ -2,7 +2,7 @@ import {action, observable} from "mobx";
 import { Vector } from "p5";
 
 class P5Store {
-    @observable lastPlayerPosition: Vector = new Vector();
+    @observable lastPlayerPosition: Vector | undefined;
     @observable puntos: number = 0;
 
     @action seLastPlayerPosition(position: Vector) {

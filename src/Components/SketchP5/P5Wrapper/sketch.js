@@ -22,7 +22,8 @@ class SketchComponent extends PureComponent {
 	// mounting view, that is: after CSS layouting is done.
 	mountedView(view) {
 		if (view) {
-			const ratio = window.devicePixelRatio || 1;
+			// const ratio = window.devicePixelRatio || 1;
+            const ratio = 1;
 			const width = (view.clientWidth * ratio) | 0;
 			const height = (view.clientHeight * ratio) | 0;
 			let newState = { view, width, height, ratio };
@@ -110,7 +111,7 @@ class SketchComponent extends PureComponent {
 			default:
 				break;
 		}
-
+        style.margin = '0';
 		return (
 			<div
 				ref={this.mountedView}
