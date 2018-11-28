@@ -3,6 +3,7 @@ import { Vector } from "p5";
 
 class P5Store {
     @observable lastPlayerPosition: Vector | undefined;
+    @observable lastEnemyPosition: Vector | undefined;
     @observable puntos: number = 0;
 
     @action seLastPlayerPosition(position: Vector) {
