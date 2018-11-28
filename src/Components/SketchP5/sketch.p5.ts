@@ -249,7 +249,10 @@ class EnemyShip {
 
         this.explotionWaves = [];
 
-        this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance));
+        // this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance));
+        this.releaseExplosion().then(() => {
+          //  console.log("World!");
+        })
 
     }
 
@@ -266,25 +269,47 @@ class EnemyShip {
         this.p5Instance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
 
     }
+
+    async releaseExplosion(): Promise<void> {
+        console.log("Hello");
+
+        for (let i = 0; i < 5; i++) {
+            // await is converting Promise<number> into number
+            const count:number = await this.delayBetweenExplosions(2000, i);
+            this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(0.5, 3), this.p5Instance));
+            console.log(count);
+        }
+    }
+
+    delayBetweenExplosions(milliseconds: number, count: number): Promise<number> {
+        return new Promise<number>(resolve => {
+            setTimeout(() => {
+                resolve(count);
+            }, milliseconds);
+        });
+    }
+
 }
 
 class ExplosionWave {
     pInstance: p5;
     pos: Vector;
     diameter: number;
+    strokeMultiplier: number;
 
-    constructor(_pos: Vector, _initialDiameter: number, _pInstance: p5) {
+    constructor(_pos: Vector, _initialDiameter: number, _strokeMultiplier: number, _pInstance: p5) {
         this.pInstance = _pInstance;
         this.pos = _pos;
         this.diameter = _initialDiameter;
+        this.strokeMultiplier = _strokeMultiplier;
     }
 
     display() {
         this.pInstance.stroke(244,67,54, 100);
-        this.pInstance.strokeWeight(this.diameter * 0.1);
+        this.pInstance.strokeWeight((this.diameter * 0.05) * this.strokeMultiplier);
         this.pInstance.fill(244,67,54, 0);
         this.pInstance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
-        this.diameter++;
+        this.diameter += this.diameter * 0.01;
     }
 }
 
