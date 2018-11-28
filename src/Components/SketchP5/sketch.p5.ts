@@ -29,7 +29,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         };
 
         p.draw = () => {
-            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 50,  60)));
+            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
             playerSpaceShip.moveSpaceship();
             playerSpaceShip.update();
             playerSpaceShip.display();
@@ -259,6 +259,9 @@ class EnemyShip {
     update() {
         this.explotionWaves.forEach((explosion: ExplosionWave) => {
             explosion.display();
+            if (explosion.diameter > 10000) {
+                this.explotionWaves.splice(this.explotionWaves.indexOf(explosion), 1);
+            }
         })
     }
 
@@ -276,7 +279,7 @@ class EnemyShip {
         for (let i = 0; i < 5; i++) {
             // await is converting Promise<number> into number
             const count:number = await this.delayBetweenExplosions(2000, i);
-            this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(0.5, 3), this.p5Instance));
+            this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(0.5, 4.5), this.p5Instance));
             console.log(count);
         }
     }
@@ -309,7 +312,11 @@ class ExplosionWave {
         this.pInstance.strokeWeight((this.diameter * 0.05) * this.strokeMultiplier);
         this.pInstance.fill(244,67,54, 0);
         this.pInstance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
-        this.diameter += this.diameter * 0.01;
+        this.update();
+    }
+
+    update() {
+        this.diameter += (this.diameter * 0.1) / this.strokeMultiplier;
     }
 }
 
