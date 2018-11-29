@@ -17,7 +17,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         let puntos: number = props.points;
         let playerPosition: Vector = props.playerPosition;
         let enemyPosition: Vector = props.enemyPosition;
-        let playerSpaceShip: CharacterSpaceship;
+        let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
         p.setup = () => {
             // p.frameRate(60);
@@ -31,9 +31,11 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         p.draw = () => {
             p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
             // p.clear();
-            playerSpaceShip.moveSpaceship();
-            playerSpaceShip.update();
-            playerSpaceShip.display();
+            if (playerSpaceShip) {
+                playerSpaceShip.moveSpaceship();
+                playerSpaceShip.update();
+                playerSpaceShip.display();
+            }
 
             if(enemySpaceShip) {
                 enemySpaceShip.update();
@@ -45,18 +47,20 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         };
         
         function checkBulletsCollision() {
-            playerSpaceShip.shots.forEach((bullet: Bullet) => {
-                if (enemySpaceShip && Vector.dist(bullet.pos, enemySpaceShip.pos) < (enemySpaceShip.diameter * 0.95) / 2) {
-                    playerSpaceShip.shots.splice(playerSpaceShip.shots.indexOf(bullet), 1);
-                    enemySpaceShip.live--;
-                    if (enemySpaceShip.live === 0) {
-                        enemySpaceShip.destroyEnemy().then(() => {
-                            console.log('mulio');
-                            enemySpaceShip = null;
-                        });
+            if (playerSpaceShip) {
+                playerSpaceShip.shots.forEach((bullet: Bullet) => {
+                    if (enemySpaceShip && Vector.dist(bullet.pos, enemySpaceShip.pos) < (enemySpaceShip.diameter * 0.95) / 2 && playerSpaceShip) {
+                        playerSpaceShip.shots.splice(playerSpaceShip.shots.indexOf(bullet), 1);
+                        enemySpaceShip.live--;
+                        if (enemySpaceShip.live === 0) {
+                            enemySpaceShip.destroyEnemy().then(() => {
+                                console.log('mulio');
+                                enemySpaceShip = null;
+                            });
+                        }
                     }
-                }
-            })
+                })
+            }
         }
 
 
@@ -66,38 +70,47 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 
                 enemySpaceShip.explosionWaves.forEach((wave: ExplosionWave) => {
 
+                    if (playerSpaceShip) {
 
-                    const diameterFixed = ((wave.diameter * 0.97) / 2);
-                    const superiorDiameter = diameterFixed + (wave.strokeSize / 2);
-                    const inferiorDiameter = diameterFixed - (wave.strokeSize / 2);
+                        const diameterFixed = ((wave.diameter * 0.97) / 2);
+                        const superiorDiameter = diameterFixed + (wave.strokeSize / 2);
+                        const inferiorDiameter = diameterFixed - (wave.strokeSize / 2);
 
-                    // SUPERIOR EXPLOSION CIRCUMFERENCE
-                    const superiorVector = Vector.sub(playerSpaceShip.pos, wave.pos);
-                    superiorVector.normalize();
-                    superiorVector.mult(superiorDiameter);
+                        // SUPERIOR EXPLOSION CIRCUMFERENCE
+                        const superiorVector = Vector.sub(playerSpaceShip.pos, wave.pos);
+                        superiorVector.normalize();
+                        superiorVector.mult(superiorDiameter);
 
-                    const superiorTarget: Vector = wave.pos.copy();
-                    superiorTarget.add(superiorVector);
-                    // p.stroke(0, 200, 0);
-                    // p.line(wave.pos.x, wave.pos.y, superiorTarget.x, superiorTarget.y);
+                        const superiorTarget: Vector = wave.pos.copy();
+                        superiorTarget.add(superiorVector);
+                        // p.stroke(0, 200, 0);
+                        // p.line(wave.pos.x, wave.pos.y, superiorTarget.x, superiorTarget.y);
 
 
-                    // INFERIOR EXPLOSION CIRCUMFERENCE
-                    const inferiorVector = Vector.sub(playerSpaceShip.pos, wave.pos);
-                    inferiorVector.normalize();
-                    inferiorVector.mult(inferiorDiameter);
+                        // INFERIOR EXPLOSION CIRCUMFERENCE
+                        const inferiorVector = Vector.sub(playerSpaceShip.pos, wave.pos);
+                        inferiorVector.normalize();
+                        inferiorVector.mult(inferiorDiameter);
 
-                    const inferiorTarget: Vector = wave.pos.copy();
-                    inferiorTarget.add(inferiorVector);
-                    // p.stroke(0, 0, 200);
-                    // p.line(wave.pos.x, wave.pos.y, inferiorTarget.x, inferiorTarget.y);
+                        const inferiorTarget: Vector = wave.pos.copy();
+                        inferiorTarget.add(inferiorVector);
+                        // p.stroke(0, 0, 200);
+                        // p.line(wave.pos.x, wave.pos.y, inferiorTarget.x, inferiorTarget.y);
 
-                    if ((Vector.dist(wave.pos, playerSpaceShip.pos) > Vector.dist(wave.pos, inferiorTarget)) && (Vector.dist(wave.pos, playerSpaceShip.pos) < Vector.dist(wave.pos, superiorTarget))) {
-                        //  console.log('dañooooo: ' + wave.strokeSize);
+                        if ((Vector.dist(wave.pos, playerSpaceShip.pos) > Vector.dist(wave.pos, inferiorTarget)) && (Vector.dist(wave.pos, playerSpaceShip.pos) < Vector.dist(wave.pos, superiorTarget))) {
+                            //  console.log('dañooooo: ' + wave.strokeSize);
+                            if (!playerSpaceShip.invulnerable && !playerSpaceShip.redInvulnerable) {
+                                playerSpaceShip.damaged();
+                                if (playerSpaceShip.live === 0) {
+                                    console.log('mulioPLayel');
+                                    playerSpaceShip = null;
+                                }
+                            }
+                        }
                     }
 
-
                 });
+
 
             }
 
@@ -110,19 +123,39 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         };
 
         p.mousePressed = () => {
-            playerSpaceShip.shot();
 
             return false;
         };
 
         p.keyPressed = () => {
+            if (playerSpaceShip && !playerSpaceShip.redInvulnerable && !playerSpaceShip.invulnerable && p.keyCode === 38) {
+                playerSpaceShip.shot();
+            } else if (playerSpaceShip && p.keyCode === 37) {
+                playerSpaceShip.redInvulnerable = true;
+            } else if (playerSpaceShip && p.key === 'a') {
+                playerSpaceShip.leftKeyPressed = true;
+            } else if (playerSpaceShip && p.key === 'd') {
+                playerSpaceShip.rightKeyPressed = true;
+            }
 
             return false;
         };
 
+        p.keyReleased = () => {
+          if (playerSpaceShip && p.keyCode === 37)  {
+              playerSpaceShip.redInvulnerable = false;
+          } else if (playerSpaceShip && p.key === 'a') {
+              playerSpaceShip.leftKeyPressed = false;
+          } else if (playerSpaceShip && p.key === 'd') {
+              playerSpaceShip.rightKeyPressed = false;
+          }
+        };
+
         p.unmount = () => {
             console.log('The sketch was unmounted. Width was ' + width + ', height was ' + height);
-            playerSpaceShip.unmount();
+            if (playerSpaceShip) {
+                playerSpaceShip.unmount();
+            }
         }
     }
 };
@@ -132,12 +165,17 @@ class CharacterSpaceship {
     private readonly vel: Vector;
     private readonly acceleration: Vector;
     private deviceAcceleration: DeviceAcceleration | undefined;
-    private p5Instance: p5;
+    private readonly p5Instance: p5;
     private friction: number;
     private readonly sketchWidth: number;
     private readonly sketchHeight: number;
     mass: number;
     diameter: number;
+    live: number;
+    invulnerable: boolean;
+    redInvulnerable: boolean;
+    leftKeyPressed: boolean;
+    rightKeyPressed: boolean;
 
     shots: Bullet[];
 
@@ -151,6 +189,11 @@ class CharacterSpaceship {
         this.friction = this.mass * 0.01;
         lastPlayerPosition? this.pos = lastPlayerPosition : this.pos = this.p5Instance.createVector(this.sketchWidth * 0.5, this.sketchHeight * 0.85);
         this.diameter = this.mass * (this.sketchWidth * 0.01);
+        this.live = 5;
+        this.invulnerable = false;
+        this.redInvulnerable = false;
+        this.leftKeyPressed = false;
+        this.rightKeyPressed = false;
 
         window.addEventListener('devicemotion', this.motionEventHandler, true);
 
@@ -174,7 +217,17 @@ class CharacterSpaceship {
 
     display() {
         this.p5Instance.noStroke();
-        this.p5Instance.fill(230);
+        if (this.redInvulnerable) {
+            this.p5Instance.stroke(255, 50, 50);
+            this.p5Instance.strokeWeight(this.diameter * 0.1);
+            this.p5Instance.fill(230, 155);
+        } else if (this.invulnerable)  {
+            this.p5Instance.stroke(255);
+            this.p5Instance.strokeWeight(this.diameter * 0.1);
+            this.p5Instance.fill(230, 50);
+        } else {
+            this.p5Instance.fill(230, 255);
+        }
         this.p5Instance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
     }
 
@@ -196,14 +249,14 @@ class CharacterSpaceship {
             }
         }
 
-
-        if(this.p5Instance.keyIsPressed) {
-            if (this.p5Instance.key === 'a' && this.pos.x > this.sketchWidth * 0.1) {
-                this.applyForce(this.p5Instance.createVector(-3, 0, 0));
-            } else if (this.p5Instance.key === 'd' && this.pos.x < this.sketchWidth * 0.9) {
-                this.applyForce(this.p5Instance.createVector(+3, 0, 0));
-            }
+        if (this.leftKeyPressed && this.pos.x > this.sketchWidth * 0.1) {
+            this.applyForce(this.p5Instance.createVector(-3, 0, 0));
         }
+        if (this.rightKeyPressed && this.pos.x < this.sketchWidth * 0.9) {
+            this.applyForce(this.p5Instance.createVector(+3, 0, 0));
+        }
+
+
         this.checkEdges();
        // this.pos.set(this.pos.x, this.sketchHeight * 0.8);
         this.vel.limit(10);
@@ -246,6 +299,24 @@ class CharacterSpaceship {
     shot() {
         this.shots.push(new Bullet(this.pos.copy(), this.p5Instance))
     }
+
+    damaged() {
+        this.live--;
+        this.invulnerable = true;
+        this.invulnerabilityDelay().then(() => {
+            this.invulnerable = false;
+        });
+    }
+
+    invulnerabilityDelay(): Promise<void> {
+        return new Promise<void>(resolve => {
+            setTimeout(() => {
+                resolve();
+            }, 1000);
+        });
+    }
+
+
 
     unmount() {
         window.removeEventListener('devicemotion', this.motionEventHandler, true);
@@ -418,7 +489,7 @@ class EnemyShip {
     async releaseExplosion(): Promise<void> {
             for (let i = 0; i < this.p5Instance.random(2, 6); i++) {
                 if (this.alive) {
-                    this.explosionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(0.5, 4.5), this.p5Instance));
+                    this.explosionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(1, 4.5), this.p5Instance));
                     if (i < 5) {
                         await this.delayBetweenExplosions(this.p5Instance.random(500, 2000));
                     } else {
