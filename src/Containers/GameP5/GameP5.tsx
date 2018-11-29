@@ -30,11 +30,11 @@ class GameP5 extends PureComponent {
         return (
             <div className={'gameContainer'}>
                 <div className={'fireButtonContainer'}>
-                    <button className={'fireButton'} onClick={this.onShot}/>
+                    <button className={'fireButton'} onTouchStart={this.onShot}/>
                 </div>
                 <SketchGame/>
                 <div className={'invulnerabilityButtonContainer'}>
-                    <button className={'invulnerabilityButton'} onPointerDown={this.onInvulnerabilityActive} onPointerUp={this.onInvulnerabilityOff}/>
+                    <button className={'invulnerabilityButton'} onTouchStart={this.onInvulnerabilityActive}  onTouchEnd={this.onInvulnerabilityOff}/>
                 </div>
             </div>
         );

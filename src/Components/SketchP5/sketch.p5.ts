@@ -123,10 +123,9 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
                 if (fire) {
                     if (!playerSpaceShip.redInvulnerable && !playerSpaceShip.invulnerable) {
                         playerSpaceShip.shot();
-                        fire = false;
-                        store.BulletFired(fire);
                     }
-
+                    fire = false;
+                    store.BulletFired(fire);
                 }
             }
 
