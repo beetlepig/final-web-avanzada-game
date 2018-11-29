@@ -8,11 +8,13 @@ interface customP5Functions extends p5 {
 
 interface SketchProps {
     fire: boolean;
+    redInvulnerability: boolean;
 }
 
 export const sketch = (width: number, height: number, props: SketchProps) => {
     return function (p: customP5Functions) {
         let fire: boolean =  props.fire;
+        let redInvulnerability: boolean = props.redInvulnerability;
         let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
         p.setup = () => {
@@ -114,19 +116,22 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 
         p.receiveProps = (nextProps: SketchProps) => {
             fire = nextProps.fire;
-            if (fire) {
-                if (playerSpaceShip && !playerSpaceShip.redInvulnerable && !playerSpaceShip.invulnerable) {
-                    playerSpaceShip.shot();
+            redInvulnerability = nextProps.redInvulnerability;
+
+            if  (playerSpaceShip) {
+                playerSpaceShip.redInvulnerable = redInvulnerability;
+                if (fire) {
+                    if (!playerSpaceShip.redInvulnerable && !playerSpaceShip.invulnerable) {
+                        playerSpaceShip.shot();
+                        fire = false;
+                        store.BulletFired(fire);
+                    }
+
                 }
-                fire = false;
-                store.BulletFired(fire);
             }
+
         };
 
-        p.mousePressed = () => {
-
-            return false;
-        };
 
         p.keyPressed = () => {
             if (playerSpaceShip && !playerSpaceShip.redInvulnerable && !playerSpaceShip.invulnerable && p.keyCode === 38) {
@@ -138,8 +143,6 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
             } else if (playerSpaceShip && p.key === 'd') {
                 playerSpaceShip.rightKeyPressed = true;
             }
-
-            return false;
         };
 
         p.keyReleased = () => {
@@ -242,7 +245,7 @@ class CharacterSpaceship {
 
         // Apply accelerometer x force
         if (this.deviceAcceleration && this.deviceAcceleration.y) {
-            const acceleration: number = this.p5Instance.map(this.deviceAcceleration.y, -9, 9, 2, -2);
+            const acceleration: number = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -2, 2);
             if (acceleration > 0 && this.pos.x < this.sketchWidth * 0.9) {
                 this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
             } else if (acceleration < 0 && this.pos.x > this.sketchWidth * 0.1) {

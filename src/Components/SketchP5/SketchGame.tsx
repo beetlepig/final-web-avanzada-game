@@ -33,7 +33,7 @@ interface State {
                 <Sketch sketch={sketch}
                         width={'99%'}
                         height={'99%'}
-                        sketchProps={{fire: store.fire}}
+                        sketchProps={{fire: store.fire, redInvulnerability: store.redInvulnerability}}
                 />
             </div>
         );
