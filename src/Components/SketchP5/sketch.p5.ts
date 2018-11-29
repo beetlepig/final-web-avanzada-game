@@ -29,13 +29,53 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         };
 
         p.draw = () => {
-            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
+            // p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
+            p.clear();
             playerSpaceShip.moveSpaceship();
             playerSpaceShip.update();
             playerSpaceShip.display();
 
             enemySpaceShip.update();
             enemySpaceShip.display();
+
+            checkExplosionCollision();
+        };
+
+        function checkExplosionCollision() {
+            enemySpaceShip.explosionWaves.forEach((wave: ExplosionWave) => {
+
+
+                const diameterFixed = ((wave.diameter * 0.97) / 2);
+                const superiorDiameter = diameterFixed + (wave.strokeSize / 2);
+                const inferiorDiameter = diameterFixed - (wave.strokeSize / 2);
+
+                // SUPERIOR EXPLOSION CIRCUMFERENCE
+                const superiorVector = Vector.sub(playerSpaceShip.pos, wave.pos);
+                superiorVector.normalize();
+                superiorVector.mult(superiorDiameter);
+
+                const superiorTarget: Vector = wave.pos.copy();
+                superiorTarget.add(superiorVector);
+                p.stroke(0, 200, 0);
+                p.line(wave.pos.x, wave.pos.y, superiorTarget.x, superiorTarget.y);
+
+
+                // INFERIOR EXPLOSION CIRCUMFERENCE
+                const inferiorVector = Vector.sub(playerSpaceShip.pos, wave.pos);
+                inferiorVector.normalize();
+                inferiorVector.mult(inferiorDiameter);
+
+                const inferiorTarget: Vector = wave.pos.copy();
+                inferiorTarget.add(inferiorVector);
+                p.stroke(0, 0, 200);
+                p.line(wave.pos.x, wave.pos.y, inferiorTarget.x, inferiorTarget.y);
+
+                if ((Vector.dist(wave.pos, playerSpaceShip.pos) > Vector.dist(wave.pos, inferiorTarget)) && (Vector.dist(wave.pos, playerSpaceShip.pos) < Vector.dist(wave.pos, superiorTarget))) {
+                    console.log('dañooooo: ' + wave.strokeSize);
+                }
+
+
+            });
         };
 
         p.receiveProps = (nextProps: SketchProps) => {
@@ -63,7 +103,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 };
 
 class CharacterSpaceship {
-    private readonly pos: Vector;
+    readonly pos: Vector;
     private readonly vel: Vector;
     private readonly acceleration: Vector;
     private deviceAcceleration: DeviceAcceleration | undefined;
@@ -83,7 +123,7 @@ class CharacterSpaceship {
         this.vel = this.p5Instance.createVector(0, 0);
         this.acceleration = this.p5Instance.createVector(0 , 0);
         this.mass = 6;
-        this.friction = 0.25;
+        this.friction = this.mass * 0.01;
         lastPlayerPosition? this.pos = lastPlayerPosition : this.pos = this.p5Instance.createVector(this.sketchWidth * 0.5, this.sketchHeight * 0.85);
         this.diameter = this.mass * (this.sketchWidth * 0.01);
 
@@ -224,17 +264,21 @@ class Bullet {
 }
 
 class EnemyShip {
-    private readonly pos: Vector;
+    readonly pos: Vector;
     private readonly vel: Vector;
-    private readonly acceleration: Vector;
-    private p5Instance: p5;
+    private acceleration: Vector;
+    private readonly p5Instance: p5;
     private friction: number;
     private readonly sketchWidth: number;
     private readonly sketchHeight: number;
     mass: number;
     diameter: number;
 
-    explotionWaves: ExplosionWave[];
+    explosionWaves: ExplosionWave[];
+    private alive: boolean;
+    private moving: boolean;
+    private resolveMovePromise: (() => void) | undefined;
+    private objetive: Vector;
 
     constructor(_p5Instance: p5, _sketchWidth: number, _sketchHeight: number, lastEnemyPosition: Vector) {
         this.p5Instance = _p5Instance;
@@ -243,26 +287,81 @@ class EnemyShip {
         this.vel = this.p5Instance.createVector(0, 0);
         this.acceleration = this.p5Instance.createVector(0 , 0);
         this.mass = 10;
-        this.friction = 0.25;
-        lastEnemyPosition? this.pos = lastEnemyPosition : this.pos = this.p5Instance.createVector(this.sketchWidth * 0.5, this.sketchHeight * 0.2);
+        this.friction = this.mass * 0.01;
+        lastEnemyPosition? this.pos = lastEnemyPosition : this.pos = this.p5Instance.createVector(0, 0);
         this.diameter = this.mass * (this.sketchWidth * 0.01);
 
-        this.explotionWaves = [];
+        this.explosionWaves = [];
+        this.alive = true;
+        this.moving = true;
 
-        // this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance));
-        this.releaseExplosion().then(() => {
-          //  console.log("World!");
-        })
+        this.objetive = this.p5Instance.createVector(this.p5Instance.random(0, this.sketchWidth), this.p5Instance.random(0, this.sketchHeight));
+
+        this.shotWave();
 
     }
 
+    async shotWave(): Promise<void> {
+        while (this.alive) {
+            await this.move();
+            await this.releaseExplosion();
+        }
+    }
+
+    move(): Promise<void> {
+        this.objetive.set(this.p5Instance.random(this.sketchWidth * 0.1, this.sketchWidth * 0.8), this.p5Instance.random(this.sketchHeight * 0.1, this.sketchHeight * 0.6));
+        this.moving = true;
+        return new Promise<void>(resolve => {
+            this.resolveMovePromise = resolve;
+        });
+    }
+
+    applyForce(force: Vector) {
+        const f: Vector = Vector.div(force , this.mass);
+        this.acceleration.add(f);
+    }
+
     update() {
-        this.explotionWaves.forEach((explosion: ExplosionWave) => {
+
+        if (this.moving) {
+            if (Vector.dist(this.objetive, this.pos) < this.diameter * 0.6) {
+                this.friction = 0.8 * this.vel.mag();
+                if (this.vel.mag() < 2) {
+                    this.vel.mult(0);
+                    this.acceleration.mult(0);
+                    this.friction = this.mass * 0.01;
+                    this.moving = false;
+                    if (this.resolveMovePromise) {
+                        this.resolveMovePromise();
+                    }
+                }
+            } else {
+                const dir = Vector.sub(this.objetive, this.pos);
+                dir.normalize();
+                dir.mult(2);
+                this.applyForce(dir);
+            }
+        }
+
+        const frictionVector: Vector = this.vel.copy();
+        frictionVector.mult(-1);
+        frictionVector.normalize();
+        frictionVector.mult(this.friction);
+        this.applyForce(frictionVector);
+
+        this.vel.add(this.acceleration);
+        this.pos.add(this.vel);
+        this.acceleration.mult(0);
+
+
+        this.explosionWaves.forEach((explosion: ExplosionWave) => {
             explosion.display();
             if (explosion.diameter > 10000) {
-                this.explotionWaves.splice(this.explotionWaves.indexOf(explosion), 1);
+                this.explosionWaves.splice(this.explosionWaves.indexOf(explosion), 1);
             }
-        })
+        });
+
+        this.vel.limit(20);
     }
 
     display() {
@@ -274,20 +373,20 @@ class EnemyShip {
     }
 
     async releaseExplosion(): Promise<void> {
-        console.log("Hello");
-
-        for (let i = 0; i < 5; i++) {
-            // await is converting Promise<number> into number
-            const count:number = await this.delayBetweenExplosions(2000, i);
-            this.explotionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(0.5, 4.5), this.p5Instance));
-            console.log(count);
-        }
+            for (let i = 0; i < this.p5Instance.random(2, 6); i++) {
+                this.explosionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(0.5, 4.5), this.p5Instance));
+                if (i < 5) {
+                    await this.delayBetweenExplosions(this.p5Instance.random(500, 2000));
+                } else {
+                    await this.delayBetweenExplosions(20);
+                }
+            }
     }
 
-    delayBetweenExplosions(milliseconds: number, count: number): Promise<number> {
-        return new Promise<number>(resolve => {
+    delayBetweenExplosions(milliseconds: number): Promise<void> {
+        return new Promise<void>(resolve => {
             setTimeout(() => {
-                resolve(count);
+                resolve();
             }, milliseconds);
         });
     }
@@ -299,18 +398,21 @@ class ExplosionWave {
     pos: Vector;
     diameter: number;
     strokeMultiplier: number;
+    strokeSize: number;
 
     constructor(_pos: Vector, _initialDiameter: number, _strokeMultiplier: number, _pInstance: p5) {
         this.pInstance = _pInstance;
         this.pos = _pos;
         this.diameter = _initialDiameter;
         this.strokeMultiplier = _strokeMultiplier;
+        this.strokeSize = (this.diameter * 0.05) * this.strokeMultiplier;
     }
 
     display() {
         this.pInstance.stroke(244,67,54, 100);
-        this.pInstance.strokeWeight((this.diameter * 0.05) * this.strokeMultiplier);
-        this.pInstance.fill(244,67,54, 0);
+        this.strokeSize = (this.diameter * 0.05) * this.strokeMultiplier;
+        this.pInstance.strokeWeight(this.strokeSize);
+        this.pInstance.noFill();
         this.pInstance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
         this.update();
     }
