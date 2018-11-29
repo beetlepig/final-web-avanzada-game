@@ -2,16 +2,10 @@ import {action, observable} from "mobx";
 import { Vector } from "p5";
 
 class P5Store {
-    @observable lastPlayerPosition: Vector | undefined;
-    @observable lastEnemyPosition: Vector | undefined;
-    @observable puntos: number = 0;
+    @observable fire: boolean  = false;
 
-    @action seLastPlayerPosition(position: Vector) {
-        this.lastPlayerPosition = position;
-    }
-
-    @action setPuntos(points: number) {
-        this.puntos = points;
+    @action BulletFired(isFired: boolean) {
+        this.fire = isFired;
     }
 
 }

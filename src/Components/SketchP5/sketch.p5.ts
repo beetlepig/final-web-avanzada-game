@@ -7,16 +7,12 @@ interface customP5Functions extends p5 {
 }
 
 interface SketchProps {
-    points: number;
-    playerPosition: Vector;
-    enemyPosition: Vector;
+    fire: boolean;
 }
 
 export const sketch = (width: number, height: number, props: SketchProps) => {
     return function (p: customP5Functions) {
-        let puntos: number = props.points;
-        let playerPosition: Vector = props.playerPosition;
-        let enemyPosition: Vector = props.enemyPosition;
+        let fire: boolean =  props.fire;
         let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
         p.setup = () => {
@@ -24,8 +20,8 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
             p.ellipseMode(p.CENTER);
             p.textAlign(p.CENTER);
             // p.noSmooth();
-            playerSpaceShip = new CharacterSpaceship(p, width, height, playerPosition);
-            enemySpaceShip = new EnemyShip(p, width, height, enemyPosition);
+            playerSpaceShip = new CharacterSpaceship(p, width, height);
+            enemySpaceShip = new EnemyShip(p, width, height);
         };
 
         p.draw = () => {
@@ -117,9 +113,14 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         }
 
         p.receiveProps = (nextProps: SketchProps) => {
-            puntos = nextProps.points;
-            playerPosition = nextProps.playerPosition;
-            enemyPosition = nextProps.enemyPosition;
+            fire = nextProps.fire;
+            if (fire) {
+                if (playerSpaceShip && !playerSpaceShip.redInvulnerable && !playerSpaceShip.invulnerable) {
+                    playerSpaceShip.shot();
+                }
+                fire = false;
+                store.BulletFired(fire);
+            }
         };
 
         p.mousePressed = () => {
@@ -179,7 +180,7 @@ class CharacterSpaceship {
 
     shots: Bullet[];
 
-    constructor(_p5Instance: p5, _sketchWidth: number, _sketchHeight: number, lastPlayerPosition: Vector) {
+    constructor(_p5Instance: p5, _sketchWidth: number, _sketchHeight: number, lastPlayerPosition?: Vector) {
         this.p5Instance = _p5Instance;
         this.sketchWidth = _sketchWidth;
         this.sketchHeight = _sketchHeight;
@@ -380,7 +381,7 @@ class EnemyShip {
     private resolveDeath: (() => void) | undefined;
     private readonly objective: Vector;
 
-    constructor(_p5Instance: p5, _sketchWidth: number, _sketchHeight: number, lastEnemyPosition: Vector) {
+    constructor(_p5Instance: p5, _sketchWidth: number, _sketchHeight: number, lastEnemyPosition?: Vector) {
         this.p5Instance = _p5Instance;
         this.sketchWidth = _sketchWidth;
         this.sketchHeight = _sketchHeight;

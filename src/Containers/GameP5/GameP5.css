@@ -10,3 +10,39 @@
     align-items: center;
     overflow: auto;
 }
+
+.fireButtonContainer {
+    height: 100%;
+    width: 10%;
+    flex-grow: 1;
+    background-color: antiquewhite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.fireButton {
+    height: 20%;
+    width: 60%;
+    margin-bottom: 15%;
+    background-color: aqua;
+}
+
+.invulnerabilityButtonContainer {
+    height: 100%;
+    width: 10%;
+    flex-grow: 1;
+    background-color: antiquewhite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.invulnerabilityButton {
+    height: 20%;
+    width: 60%;
+    margin-bottom: 15%;
+    background-color: aqua;
+}

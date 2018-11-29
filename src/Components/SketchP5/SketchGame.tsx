@@ -33,7 +33,7 @@ interface State {
                 <Sketch sketch={sketch}
                         width={'99%'}
                         height={'99%'}
-                        sketchProps={{ puntos: store.puntos, playerPosition: store.lastPlayerPosition, enemyPosition: store.lastEnemyPosition}}
+                        sketchProps={{fire: store.fire}}
                 />
             </div>
         );
