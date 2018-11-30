@@ -29,13 +29,23 @@ class GameP5 extends PureComponent {
     render() {
         return (
             <div className={'gameContainer'}>
-                <div className={'fireButtonContainer'}>
-                    <button className={'fireButton'} onTouchStart={this.onShot}/>
-                </div>
-                <SketchGame/>
-                <div className={'invulnerabilityButtonContainer'}>
+                <div className={'invulnerabilityButtonContainer noResponsiveButton'}>
                     <button className={'invulnerabilityButton'} onTouchStart={this.onInvulnerabilityActive}  onTouchEnd={this.onInvulnerabilityOff}/>
                 </div>
+                <SketchGame/>
+                <div className={'buttonsGeneralContainer responsiveButton'}>
+                    <div className={'invulnerabilityButtonContainer'}>
+                        <button className={'invulnerabilityButton'} onTouchStart={this.onInvulnerabilityActive}  onTouchEnd={this.onInvulnerabilityOff}/>
+                    </div>
+                    <div className={'fireButtonContainer'}>
+                        <button className={'fireButton'} onTouchStart={this.onShot}/>
+                    </div>
+                </div>
+
+                <div className={'fireButtonContainer noResponsiveButton'}>
+                    <button className={'fireButton'} onTouchStart={this.onShot}/>
+                </div>
+
             </div>
         );
     }

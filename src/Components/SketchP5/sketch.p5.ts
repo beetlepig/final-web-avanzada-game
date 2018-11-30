@@ -180,12 +180,15 @@ class CharacterSpaceship {
     leftKeyPressed: boolean;
     rightKeyPressed: boolean;
 
+    isPortrait: boolean;
+
     shots: Bullet[];
 
     constructor(_p5Instance: p5, _sketchWidth: number, _sketchHeight: number, lastPlayerPosition?: Vector) {
         this.p5Instance = _p5Instance;
         this.sketchWidth = _sketchWidth;
         this.sketchHeight = _sketchHeight;
+        this.isPortrait  = window.innerHeight > window.innerWidth;
         this.vel = this.p5Instance.createVector(0, 0);
         this.acceleration = this.p5Instance.createVector(0 , 0);
         this.mass = 6;
@@ -243,8 +246,13 @@ class CharacterSpaceship {
         this.applyForce(frictionVector);
 
         // Apply accelerometer x force
-        if (this.deviceAcceleration && this.deviceAcceleration.y) {
-            const acceleration: number = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -2, 2);
+        if (this.deviceAcceleration && this.deviceAcceleration.y && this.deviceAcceleration.x) {
+            let acceleration: number;
+            if (this.isPortrait) {
+                acceleration = this.p5Instance.map(this.deviceAcceleration.x, -3, 3, 1, -1);
+            } else {
+                acceleration = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -1, 1);
+            }
             if (acceleration > 0 && this.pos.x < this.sketchWidth * 0.9) {
                 this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
             } else if (acceleration < 0 && this.pos.x > this.sketchWidth * 0.1) {
@@ -270,14 +278,14 @@ class CharacterSpaceship {
                 this.friction = 2;
             } else {
                 this.friction = 0.5;
-                this.applyForce(this.p5Instance.createVector(-5));
+                this.applyForce(this.p5Instance.createVector(-4));
             }
         } else if (this.pos.x < this.sketchWidth * 0.1) {
             if (this.vel.x < 0) {
                 this.friction = 2;
             } else {
                 this.friction = 0.5;
-                this.applyForce(this.p5Instance.createVector(+5));
+                this.applyForce(this.p5Instance.createVector(+4));
             }
         } else {
             this.friction = 0.5;
@@ -393,7 +401,7 @@ class EnemyShip {
         this.friction = this.mass * 0.01;
         lastEnemyPosition? this.pos = lastEnemyPosition : this.pos = this.p5Instance.createVector(0, 0);
         this.diameter = this.mass * (this.sketchWidth * 0.01);
-        this.live = 30;
+        this.live = 50;
         this.fillOpacity = 230;
 
         this.explosionWaves = [];
