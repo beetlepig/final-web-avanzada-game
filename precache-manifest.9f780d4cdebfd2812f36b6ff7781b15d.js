@@ -4,19 +4,19 @@ self.__precacheManifest = [
     "url": "/final-web-avanzada-game/static/js/runtime~main.de31f08e.js"
   },
   {
-    "revision": "3952f1cd0f93bac28576",
-    "url": "/final-web-avanzada-game/static/js/main.3952f1cd.chunk.js"
+    "revision": "4f16a0afbc37097c5fc2",
+    "url": "/final-web-avanzada-game/static/js/main.4f16a0af.chunk.js"
   },
   {
     "revision": "f88d66800aa66b6f0e80",
     "url": "/final-web-avanzada-game/static/js/1.f88d6680.chunk.js"
   },
   {
-    "revision": "3952f1cd0f93bac28576",
-    "url": "/final-web-avanzada-game/static/css/main.1ea62c24.chunk.css"
+    "revision": "4f16a0afbc37097c5fc2",
+    "url": "/final-web-avanzada-game/static/css/main.f411fa75.chunk.css"
   },
   {
-    "revision": "206df94f85115f51ccfb7660419b61f8",
+    "revision": "c7040bf61d3f12634cde24eec6b386cc",
     "url": "/final-web-avanzada-game/index.html"
   }
 ];
