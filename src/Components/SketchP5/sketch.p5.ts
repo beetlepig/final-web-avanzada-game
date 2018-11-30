@@ -393,7 +393,7 @@ class EnemyShip {
         this.friction = this.mass * 0.01;
         lastEnemyPosition? this.pos = lastEnemyPosition : this.pos = this.p5Instance.createVector(0, 0);
         this.diameter = this.mass * (this.sketchWidth * 0.01);
-        this.live = 5;
+        this.live = 30;
         this.fillOpacity = 230;
 
         this.explosionWaves = [];
@@ -484,7 +484,7 @@ class EnemyShip {
 
     display() {
         this.p5Instance.stroke(244,67,54, this.fillOpacity);
-        this.p5Instance.strokeWeight(this.diameter * 0.04);
+        this.p5Instance.strokeWeight(this.p5Instance.map(this.p5Instance.cos(this.p5Instance.radians(this.p5Instance.frameCount * 3)), -1, 1, this.diameter * 0.03,  this.diameter * 0.09));
         this.p5Instance.fill(230, 100, 100,this.fillOpacity * 0.7);
         this.p5Instance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
     }
