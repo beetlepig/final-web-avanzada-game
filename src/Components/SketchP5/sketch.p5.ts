@@ -18,7 +18,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
         let now,delta,then = p.millis();
-        let interval = 1000 / 30;
+        let interval = 1000 / 60;
         p.setup = () => {
             p.ellipseMode(p.CENTER);
             p.textAlign(p.CENTER);
@@ -30,22 +30,23 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 
             now = p.millis();
             delta = now - then;
+            if (delta > interval) {
+                p.background(33, 33, 33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40, 70)));
+                if (playerSpaceShip) {
+                    playerSpaceShip.update(delta / 1000);
+                    playerSpaceShip.display();
+                }
 
-            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
-            if (playerSpaceShip) {
-                playerSpaceShip.update(delta / 1000);
-                playerSpaceShip.display();
+                if (enemySpaceShip) {
+                    enemySpaceShip.update();
+                    enemySpaceShip.display();
+                }
+
+                checkBulletsCollision();
+                checkExplosionCollision();
+
+                then = now - (delta % interval);
             }
-
-            if(enemySpaceShip) {
-                enemySpaceShip.update();
-                enemySpaceShip.display();
-            }
-
-            checkBulletsCollision();
-            checkExplosionCollision();
-
-            then = now - (delta % interval);
 
             /*    //  WITH FRAMERATE LIMIT
             p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
