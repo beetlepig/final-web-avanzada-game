@@ -18,7 +18,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
         let now,delta,then = Date.now();
-        let interval = 1000/30;
+        let interval = 1000 / 60;
         p.setup = () => {
             p.ellipseMode(p.CENTER);
             p.textAlign(p.CENTER);
@@ -27,6 +27,18 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         };
 
         p.draw = () => {
+
+
+            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
+            if (playerSpaceShip) {
+                playerSpaceShip.display();
+            }
+
+            if(enemySpaceShip) {
+                enemySpaceShip.display();
+            }
+
+
             now = Date.now();
             delta = now - then;
             if (delta > interval) {
@@ -39,16 +51,6 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
                 }
                 then = now - (delta % interval);
             }
-
-            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
-            if (playerSpaceShip) {
-                playerSpaceShip.display();
-            }
-
-            if(enemySpaceShip) {
-                enemySpaceShip.display();
-            }
-
 
             checkBulletsCollision();
             checkExplosionCollision();
@@ -199,7 +201,7 @@ class CharacterSpaceship {
         this.vel = this.p5Instance.createVector(0, 0);
         this.acceleration = this.p5Instance.createVector(0 , 0);
         this.mass = 6;
-        this.friction = this.mass * 0.01;
+        this.friction = this.mass * 6;
         lastPlayerPosition? this.pos = lastPlayerPosition : this.pos = this.p5Instance.createVector(this.sketchWidth * 0.5, this.sketchHeight * 0.85);
         this.diameter = this.mass * (this.sketchWidth * 0.01);
         this.live = 5;
@@ -214,14 +216,20 @@ class CharacterSpaceship {
     }
 
     update(deltaTime: number) {
-        this.moveSpaceship(deltaTime);
+        this.moveSpaceship();
+
+        const frictionVector: Vector = this.vel.copy();
+        frictionVector.mult(-1);
+        frictionVector.normalize();
+        frictionVector.mult(this.friction);
+        this.applyForce(frictionVector);
 
         this.vel.add(this.acceleration);
-        this.pos.add(this.vel);
+        this.pos.add(this.vel.copy().mult(deltaTime));
         this.acceleration.mult(0);
 
         this.shots.forEach( (bullet: Bullet) => {
-            bullet.update();
+            bullet.update(deltaTime);
 
             if (bullet.pos.y < - 100) {
                 this.shots.splice( this.shots.indexOf(bullet), 1 );
@@ -249,24 +257,18 @@ class CharacterSpaceship {
         });
     }
 
-    moveSpaceship(deltaTime: number) {
+    moveSpaceship() {
 
         this.checkEdges();
-
-        const frictionVector: Vector = this.vel.copy();
-        frictionVector.mult(-1);
-        frictionVector.normalize();
-        frictionVector.mult(this.friction);
-        this.applyForce(frictionVector);
 
         let acceleration: number;
 
         // Apply accelerometer x force
         if (this.deviceAcceleration && this.deviceAcceleration.y && this.deviceAcceleration.x) {
             if (this.isPortrait) {
-                acceleration = this.p5Instance.map(this.deviceAcceleration.x, -3, 3, 100, -100) * deltaTime;
+                acceleration = this.p5Instance.map(this.deviceAcceleration.x, -3, 3, 100, -100);
             } else {
-                acceleration = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -100, 100) * deltaTime;
+                acceleration = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -100, 100);
             }
             if (acceleration > 0 && this.pos.x < this.sketchWidth * 0.9) {
                 this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
@@ -276,33 +278,33 @@ class CharacterSpaceship {
         }
 
         if (this.leftKeyPressed && this.pos.x > this.sketchWidth * 0.1) {
-            acceleration = -100 * deltaTime;
+            acceleration = -100;
             this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
         }
         if (this.rightKeyPressed && this.pos.x < this.sketchWidth * 0.9) {
-            acceleration = 100 * deltaTime;
+            acceleration = 100;
             this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
         }
 
-        this.vel.limit(10);
+        this.vel.limit(330);
     }
     checkEdges() {
         if (this.pos.x > this.sketchWidth * 0.9) {
-            if (this.vel.x > 0) {
-                this.friction = 2;
+            if (this.vel.x > 15) {
+                this.friction = this.vel.mag() * 0.5;
             } else {
-                this.friction = 0.5;
-                this.applyForce(this.p5Instance.createVector(-4));
+                this.friction = this.vel.mag() * 0.2;
+                this.applyForce(this.p5Instance.createVector(-200));
             }
         } else if (this.pos.x < this.sketchWidth * 0.1) {
-            if (this.vel.x < 0) {
-                this.friction = 2;
+            if (this.vel.x < -15) {
+                this.friction = this.vel.mag() * 0.5;
             } else {
-                this.friction = 0.5;
-                this.applyForce(this.p5Instance.createVector(+4));
+                this.friction = this.vel.mag() * 0.2;
+                this.applyForce(this.p5Instance.createVector(+200));
             }
         } else {
-            this.friction = 0.5;
+            this.friction = this.vel.mag() * 0.2;
         }
     }
 
@@ -362,12 +364,12 @@ class Bullet {
         this.acceleration = this.pInstance.createVector(0 , 0);
         this.mass = 1;
 
-        this.applyForce(this.pInstance.createVector(0, -10));
+        this.applyForce(this.pInstance.createVector(0, -500));
     }
 
-    update() {
+    update(deltaTime: number) {
         this.vel.add(this.acceleration);
-        this.pos.add(this.vel);
+        this.pos.add(this.vel.copy().mult(deltaTime));
         this.acceleration.mult(0);
     }
 
