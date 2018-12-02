@@ -31,7 +31,7 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
             delta = now - then;
             if (delta > interval) {
                 if (playerSpaceShip) {
-                    playerSpaceShip.update();
+                    playerSpaceShip.update(delta / 1000);
                 }
 
                 if(enemySpaceShip) {
@@ -213,8 +213,8 @@ class CharacterSpaceship {
         this.shots = [];
     }
 
-    update() {
-        this.moveSpaceship();
+    update(deltaTime: number) {
+        this.moveSpaceship(deltaTime);
 
         this.vel.add(this.acceleration);
         this.pos.add(this.vel);
@@ -249,7 +249,7 @@ class CharacterSpaceship {
         });
     }
 
-    moveSpaceship() {
+    moveSpaceship(deltaTime: number) {
 
         this.checkEdges();
 
@@ -259,13 +259,14 @@ class CharacterSpaceship {
         frictionVector.mult(this.friction);
         this.applyForce(frictionVector);
 
+        let acceleration: number;
+
         // Apply accelerometer x force
         if (this.deviceAcceleration && this.deviceAcceleration.y && this.deviceAcceleration.x) {
-            let acceleration: number;
             if (this.isPortrait) {
-                acceleration = this.p5Instance.map(this.deviceAcceleration.x, -3, 3, 1, -1);
+                acceleration = this.p5Instance.map(this.deviceAcceleration.x, -3, 3, 100, -100) * deltaTime;
             } else {
-                acceleration = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -1, 1);
+                acceleration = this.p5Instance.map(this.deviceAcceleration.y, -3, 3, -100, 100) * deltaTime;
             }
             if (acceleration > 0 && this.pos.x < this.sketchWidth * 0.9) {
                 this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
@@ -275,10 +276,12 @@ class CharacterSpaceship {
         }
 
         if (this.leftKeyPressed && this.pos.x > this.sketchWidth * 0.1) {
-            this.applyForce(this.p5Instance.createVector(-3, 0, 0));
+            acceleration = -100 * deltaTime;
+            this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
         }
         if (this.rightKeyPressed && this.pos.x < this.sketchWidth * 0.9) {
-            this.applyForce(this.p5Instance.createVector(+3, 0, 0));
+            acceleration = 100 * deltaTime;
+            this.applyForce(this.p5Instance.createVector(acceleration, 0, 0));
         }
 
         this.vel.limit(10);
