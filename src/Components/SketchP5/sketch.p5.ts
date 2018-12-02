@@ -17,8 +17,8 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         let redInvulnerability: boolean = props.redInvulnerability;
         let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
-        let now,delta,then = Date.now();
-        let interval = 1000 / 60;
+        let now,delta,then = p.millis();
+        let interval = 1000 / 30;
         p.setup = () => {
             p.ellipseMode(p.CENTER);
             p.textAlign(p.CENTER);
@@ -28,7 +28,26 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 
         p.draw = () => {
 
+            now = p.millis();
+            delta = now - then;
 
+            p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
+            if (playerSpaceShip) {
+                playerSpaceShip.update(delta / 1000);
+                playerSpaceShip.display();
+            }
+
+            if(enemySpaceShip) {
+                enemySpaceShip.update();
+                enemySpaceShip.display();
+            }
+
+            checkBulletsCollision();
+            checkExplosionCollision();
+
+            then = now - (delta % interval);
+
+            /*    //  WITH FRAMERATE LIMIT
             p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
             if (playerSpaceShip) {
                 playerSpaceShip.display();
@@ -54,6 +73,8 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
 
             checkBulletsCollision();
             checkExplosionCollision();
+            */
+
         };
         
         function checkBulletsCollision() {
