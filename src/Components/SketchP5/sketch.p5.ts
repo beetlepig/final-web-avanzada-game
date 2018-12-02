@@ -17,28 +17,38 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
         let redInvulnerability: boolean = props.redInvulnerability;
         let playerSpaceShip: CharacterSpaceship | null;
         let enemySpaceShip: EnemyShip | null;
+        let now,delta,then = Date.now();
+        let interval = 1000/30;
         p.setup = () => {
-            // p.frameRate(60);
             p.ellipseMode(p.CENTER);
             p.textAlign(p.CENTER);
-            // p.noSmooth();
             playerSpaceShip = new CharacterSpaceship(p, width, height);
             enemySpaceShip = new EnemyShip(p, width, height);
         };
 
         p.draw = () => {
+            now = Date.now();
+            delta = now - then;
+            if (delta > interval) {
+                if (playerSpaceShip) {
+                    playerSpaceShip.update();
+                }
+
+                if(enemySpaceShip) {
+                    enemySpaceShip.update();
+                }
+                then = now - (delta % interval);
+            }
+
             p.background(33,33,33, Math.floor(p.map(p.sin(p.radians(p.frameCount)), -1, 1, 40,  70)));
-            // p.clear();
             if (playerSpaceShip) {
-                playerSpaceShip.moveSpaceship();
-                playerSpaceShip.update();
                 playerSpaceShip.display();
             }
 
             if(enemySpaceShip) {
-                enemySpaceShip.update();
                 enemySpaceShip.display();
             }
+
 
             checkBulletsCollision();
             checkExplosionCollision();
@@ -52,7 +62,6 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
                         enemySpaceShip.live--;
                         if (enemySpaceShip.live === 0) {
                             enemySpaceShip.destroyEnemy().then(() => {
-                                console.log('mulio');
                                 enemySpaceShip = null;
                             });
                         }
@@ -96,11 +105,9 @@ export const sketch = (width: number, height: number, props: SketchProps) => {
                         // p.line(wave.pos.x, wave.pos.y, inferiorTarget.x, inferiorTarget.y);
 
                         if ((Vector.dist(wave.pos, playerSpaceShip.pos) > Vector.dist(wave.pos, inferiorTarget)) && (Vector.dist(wave.pos, playerSpaceShip.pos) < Vector.dist(wave.pos, superiorTarget))) {
-                            //  console.log('dañooooo: ' + wave.strokeSize);
                             if (!playerSpaceShip.invulnerable && !playerSpaceShip.redInvulnerable) {
                                 playerSpaceShip.damaged();
                                 if (playerSpaceShip.live === 0) {
-                                    console.log('mulioPLayel');
                                     playerSpaceShip = null;
                                 }
                             }
@@ -207,13 +214,14 @@ class CharacterSpaceship {
     }
 
     update() {
+        this.moveSpaceship();
+
         this.vel.add(this.acceleration);
         this.pos.add(this.vel);
         this.acceleration.mult(0);
 
         this.shots.forEach( (bullet: Bullet) => {
             bullet.update();
-            bullet.display();
 
             if (bullet.pos.y < - 100) {
                 this.shots.splice( this.shots.indexOf(bullet), 1 );
@@ -235,14 +243,20 @@ class CharacterSpaceship {
             this.p5Instance.fill(230, 255);
         }
         this.p5Instance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
+
+        this.shots.forEach( (bullet: Bullet) => {
+            bullet.display();
+        });
     }
 
     moveSpaceship() {
+
+        this.checkEdges();
+
         const frictionVector: Vector = this.vel.copy();
         frictionVector.mult(-1);
         frictionVector.normalize();
         frictionVector.mult(this.friction);
-
         this.applyForce(frictionVector);
 
         // Apply accelerometer x force
@@ -267,9 +281,6 @@ class CharacterSpaceship {
             this.applyForce(this.p5Instance.createVector(+3, 0, 0));
         }
 
-
-        this.checkEdges();
-       // this.pos.set(this.pos.x, this.sketchHeight * 0.8);
         this.vel.limit(10);
     }
     checkEdges() {
@@ -381,6 +392,7 @@ class EnemyShip {
     private fillOpacity: number;
     mass: number;
     diameter: number;
+    brake: boolean;
 
     live: number;
 
@@ -407,6 +419,7 @@ class EnemyShip {
         this.explosionWaves = [];
         this.alive = true;
         this.moving = true;
+        this.brake = false;
 
         this.objective = this.p5Instance.createVector(this.p5Instance.random(0, this.sketchWidth), this.p5Instance.random(0, this.sketchHeight));
 
@@ -426,7 +439,7 @@ class EnemyShip {
     }
 
     move(): Promise<void> {
-        this.objective.set(this.p5Instance.random(this.sketchWidth * 0.1, this.sketchWidth * 0.8), this.p5Instance.random(this.sketchHeight * 0.1, this.sketchHeight * 0.6));
+        this.objective.set(this.p5Instance.random(this.sketchWidth * 0.15, this.sketchWidth * 0.75), this.p5Instance.random(this.sketchHeight * 0.15, this.sketchHeight * 0.55));
         this.moving = true;
         return new Promise<void>(resolve => {
             this.resolveMovePromise = resolve;
@@ -441,13 +454,13 @@ class EnemyShip {
     update() {
 
         if (this.moving) {
-            if (Vector.dist(this.objective, this.pos) < this.diameter * 0.6) {
-                this.friction = 0.8 * this.vel.mag();
-                if (this.vel.mag() < 0.8) {
+            if (this.brake) {
+                if (this.vel.mag() < 0.2) {
                     this.vel.mult(0);
                     this.acceleration.mult(0);
                     this.friction = this.mass * 0.01;
                     this.moving = false;
+                    this.brake = false;
                     if (this.resolveMovePromise) {
                         this.resolveMovePromise();
                     }
@@ -457,7 +470,13 @@ class EnemyShip {
                 dir.normalize();
                 dir.mult(2);
                 this.applyForce(dir);
+
+                if (Vector.dist(this.objective, this.pos) < this.diameter * 0.2) {
+                    this.brake = true;
+                    this.friction = this.vel.mag() * 0.3;
+                }
             }
+
         }
 
         if (!this.alive) {
@@ -481,7 +500,7 @@ class EnemyShip {
 
 
         this.explosionWaves.forEach((explosion: ExplosionWave) => {
-            explosion.display();
+            explosion.update();
             if (explosion.diameter > 10000) {
                 this.explosionWaves.splice(this.explosionWaves.indexOf(explosion), 1);
             }
@@ -495,17 +514,17 @@ class EnemyShip {
         this.p5Instance.strokeWeight(this.p5Instance.map(this.p5Instance.cos(this.p5Instance.radians(this.p5Instance.frameCount * 3)), -1, 1, this.diameter * 0.03,  this.diameter * 0.09));
         this.p5Instance.fill(230, 100, 100,this.fillOpacity * 0.7);
         this.p5Instance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
+
+        this.explosionWaves.forEach((explosion: ExplosionWave) => {
+            explosion.display();
+        });
     }
 
     async releaseExplosion(): Promise<void> {
             for (let i = 0; i < this.p5Instance.random(2, 6); i++) {
                 if (this.alive) {
-                    this.explosionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(1, 4.5), this.p5Instance));
-                    if (i < 5) {
-                        await this.delayBetweenExplosions(this.p5Instance.random(500, 2000));
-                    } else {
-                        await this.delayBetweenExplosions(20);
-                    }
+                    this.explosionWaves.push(new ExplosionWave(this.pos.copy(), this.diameter, this.p5Instance.random(1, 4), this.p5Instance));
+                    await this.delayBetweenExplosions(this.p5Instance.random(500, 2000));
                 }
             }
     }
@@ -520,7 +539,6 @@ class EnemyShip {
 
     destroyEnemy(): Promise<void> {
         this.alive = false;
-        console.log('va a molil');
         return new Promise<void>(resolve => {
             this.resolveDeath = resolve;
         });
@@ -547,15 +565,14 @@ class ExplosionWave {
 
     display() {
         this.pInstance.stroke(244,67,54, 100);
-        this.strokeSize = (this.diameter * 0.05) * this.strokeMultiplier;
         this.pInstance.strokeWeight(this.strokeSize);
         this.pInstance.noFill();
         this.pInstance.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
-        this.update();
     }
 
     update() {
         this.diameter += (this.diameter * 0.1) / this.strokeMultiplier;
+        this.strokeSize = (this.diameter * 0.05) * this.strokeMultiplier;
     }
 }
 
