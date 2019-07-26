@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
 importScripts(
-  "/final-web-avanzada-game/precache-manifest.e8d85511457b4ed1eef31be9cefbbee0.js"
+  "/final-web-avanzada-game/precache-manifest.dea4cde600ef57e589c195ecf5d9f3ce.js"
 );
 
 workbox.clientsClaim();
